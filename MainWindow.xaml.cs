@@ -25,6 +25,9 @@ using Microsoft.UI.Windowing;
 using Windows.UI.ViewManagement;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
+using System.Drawing;
+using Windows.Storage.Streams;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -165,11 +168,51 @@ namespace IconViewer
 
         }
 
-        private void setFileDisplay(IStorageFile file)
+        private async void setFileDisplay(IStorageFile file)
         {
             if(file.FileType == ".ico")
             {
-                FileName.Text = file.Path;
+                byte[] contents;
+                using (var fileStream = await file.OpenStreamForReadAsync())
+                {
+                    contents = new byte[fileStream.Length];
+
+                    fileStream.Read(contents);
+                }
+
+                short flags = BitConverter.ToInt16(contents, 0);
+                short type = BitConverter.ToInt16(contents, 2);
+                short count = BitConverter.ToInt16(contents, 4);
+
+                byte[][] icons = new byte[count][];
+
+                for(int i = 0; i < count; i++)
+                {
+                    int offset = (i * 16) + 6;
+                    byte width = contents[offset];
+                    byte height = contents[offset + 1];
+                    byte palette = contents[offset + 2];
+                    byte reserved = contents[offset + 3];
+                    short planes = BitConverter.ToInt16(contents, offset + 4);
+                    short bpp = BitConverter.ToInt16(contents, offset + 6);
+                    int size = BitConverter.ToInt32(contents, offset + 8);
+                    int dataOffset = BitConverter.ToInt32(contents, offset + 12);
+                    icons[i] = new byte[size];
+                    try
+                    {
+                        Array.Copy(contents, dataOffset, icons[i], 0, size);
+                    } catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+
+                MemoryStream stream = new MemoryStream(icons[0]);
+
+                WriteableBitmap newImage = new WriteableBitmap(256, 256);
+                await newImage.SetSourceAsync(stream.AsRandomAccessStream());
+
+                mainImage.Source = newImage;
             }
         }
     }

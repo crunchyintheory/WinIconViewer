@@ -39,7 +39,7 @@
                 <NavigationViewItem Icon="Download" Content="Menu Item4" Tag="SamplePage4" />
             </NavigationView.MenuItems>
             <Frame x:Name="contentFrame">
-                <TextBlock x:Name="FileName" HorizontalAlignment="Center" VerticalAlignment="Center"></TextBlock>
+                <Image x:Name="mainImage" />
             </Frame>
         </NavigationView>
     </Grid>
