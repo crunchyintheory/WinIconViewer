@@ -180,39 +180,78 @@ namespace IconViewer
                     fileStream.Read(contents);
                 }
 
-                short flags = BitConverter.ToInt16(contents, 0);
-                short type = BitConverter.ToInt16(contents, 2);
-                short count = BitConverter.ToInt16(contents, 4);
+                ICOIconDir dir;
 
-                byte[][] icons = new byte[count][];
+                dir.idReserved = BitConverter.ToUInt16(contents, 0);
+                dir.idType = BitConverter.ToUInt16(contents, 2);
+                dir.idCount = BitConverter.ToUInt16(contents, 4);
 
-                for(int i = 0; i < count; i++)
+                dir.idEntries = new ICOIconDirEntry[dir.idCount];
+
+                for(int i = 0; i < dir.idCount; i++)
                 {
                     int offset = (i * 16) + 6;
-                    byte width = contents[offset];
-                    byte height = contents[offset + 1];
-                    byte palette = contents[offset + 2];
-                    byte reserved = contents[offset + 3];
-                    short planes = BitConverter.ToInt16(contents, offset + 4);
-                    short bpp = BitConverter.ToInt16(contents, offset + 6);
-                    int size = BitConverter.ToInt32(contents, offset + 8);
-                    int dataOffset = BitConverter.ToInt32(contents, offset + 12);
-                    icons[i] = new byte[size];
+                    dir.idEntries[i].bWidth = contents[offset];
+                    dir.idEntries[i].bHeight = contents[offset + 1];
+                    dir.idEntries[i].bColorCount = contents[offset + 2];
+                    dir.idEntries[i].bReserved = contents[offset + 3];
+                    dir.idEntries[i].wPlanes = BitConverter.ToUInt16(contents, offset + 4);
+                    dir.idEntries[i].wBitCount = BitConverter.ToUInt16(contents, offset + 6);
+                    dir.idEntries[i].dwBytesInRes = BitConverter.ToUInt32(contents, offset + 8);
+                    dir.idEntries[i].dwImageOffset = BitConverter.ToUInt32(contents, offset + 12);
+
+                    dir.idEntries[i].iconData = new byte[dir.idEntries[i].dwBytesInRes];
                     try
                     {
-                        Array.Copy(contents, dataOffset, icons[i], 0, size);
+                        Array.Copy(contents, dir.idEntries[i].dwImageOffset, dir.idEntries[i].iconData, 0, dir.idEntries[i].dwBytesInRes);
                     } catch (Exception ex)
                     {
                         Console.WriteLine(ex.Message);
                     }
                 }
 
-                MemoryStream stream = new MemoryStream(icons[0]);
+                Console.WriteLine(dir);
 
-                WriteableBitmap newImage = new WriteableBitmap(256, 256);
-                await newImage.SetSourceAsync(stream.AsRandomAccessStream());
+                try
+                {
+                    int i = 0;
 
-                mainImage.Source = newImage;
+                    uint PNGMagicBytes = 0x474e5089;
+                    byte[] newIcon;
+
+                    if (BitConverter.ToUInt32(dir.idEntries[i].iconData, 0) != PNGMagicBytes)
+                    {
+                        // Reconstruct BMP Header
+                        byte[] headerDataTemp = new byte[14];
+                        BitConverter.GetBytes((ushort)0x4D42).CopyTo(headerDataTemp, 0x00);
+                        BitConverter.GetBytes((uint)dir.idEntries[i].dwBytesInRes + 14).CopyTo(headerDataTemp, 0x02);
+                        BitConverter.GetBytes((uint)0x36).CopyTo(headerDataTemp, 0x0A);
+
+
+                        newIcon = new byte[dir.idEntries[i].dwBytesInRes + 14];
+
+                        Array.Copy(headerDataTemp, newIcon, 14);
+                        Array.Copy(dir.idEntries[i].iconData, 0, newIcon, 14, dir.idEntries[i].iconData.Length);
+
+                        newIcon[22] = newIcon[18];
+                    }
+                    else
+                    {
+                        newIcon = dir.idEntries[i].iconData;
+                    }
+
+                    MemoryStream stream = new MemoryStream(newIcon);
+
+                    WriteableBitmap newImage = new WriteableBitmap(dir.idEntries[i].bWidth == 0 ? 256 : dir.idEntries[i].bWidth, dir.idEntries[i].bHeight == 0 ? 256 : dir.idEntries[i].bHeight);
+                    await newImage.SetSourceAsync(stream.AsRandomAccessStream());
+
+                    mainImage.Source = newImage;
+                    mainImage.Height = newImage.PixelHeight;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
         }
     }
