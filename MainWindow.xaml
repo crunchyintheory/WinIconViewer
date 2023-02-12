@@ -10,7 +10,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid>
+    <Grid Drop="ContentFrame_Drop" DragOver="ContentFrame_DragOver" AllowDrop="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/>
             <RowDefinition />
@@ -28,14 +28,19 @@
                        Margin="28,0,0,0"/>
         </Grid>
 
-        <NavigationView Grid.Row="1" IsSettingsVisible="False" IsBackEnabled="False" IsBackButtonVisible="Collapsed" IsPaneToggleButtonVisible="False">
+        <NavigationView Grid.Row="1" IsSettingsVisible="False" IsBackEnabled="False" IsBackButtonVisible="Collapsed" IsPaneToggleButtonVisible="False" ExpandedModeThresholdWidth="0">
             <NavigationView.MenuItems>
+                <NavigationViewItem>
+                    <TextBlock Width="64" Height="64" HorizontalAlignment="Center">Foobar</TextBlock>
+                </NavigationViewItem>
                 <NavigationViewItem Icon="Play" Content="Menu Item1" Tag="SamplePage1" />
                 <NavigationViewItem Icon="Save" Content="Menu Item2" Tag="SamplePage2" />
                 <NavigationViewItem Icon="Refresh" Content="Menu Item3" Tag="SamplePage3" />
                 <NavigationViewItem Icon="Download" Content="Menu Item4" Tag="SamplePage4" />
             </NavigationView.MenuItems>
-            <Frame x:Name="contentFrame"/>
+            <Frame x:Name="contentFrame">
+                <TextBlock x:Name="FileName" HorizontalAlignment="Center" VerticalAlignment="Center"></TextBlock>
+            </Frame>
         </NavigationView>
     </Grid>
 </Window>

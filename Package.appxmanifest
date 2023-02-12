@@ -8,12 +8,12 @@
 
   <Identity
     Name="1e8af7f0-81f2-4d7d-9c14-ea1ba67427d8"
-    Publisher="CN=Sumner"
-    Version="1.0.0.0" />
+    Publisher="CN=Sigrid Rittby"
+    Version="0.0.1.0" />
 
   <Properties>
     <DisplayName>IconViewer</DisplayName>
-    <PublisherDisplayName>Sumner</PublisherDisplayName>
+    <PublisherDisplayName>Sigrid Rittby</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -39,7 +39,25 @@
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
-    </Application>
+		<Extensions>
+			<uap:Extension Category="windows.fileTypeAssociation">
+				<uap:FileTypeAssociation Name="ico">
+					<uap:Logo>Assets\StoreLogo.png</uap:Logo>
+					<uap:SupportedFileTypes>
+						<uap:FileType>.ico</uap:FileType>
+					</uap:SupportedFileTypes>
+				</uap:FileTypeAssociation>
+			</uap:Extension>
+			<uap:Extension Category="windows.fileTypeAssociation">
+				<uap:FileTypeAssociation Name="icns">
+					<uap:Logo>Assets\StoreLogo.png</uap:Logo>
+					<uap:SupportedFileTypes>
+						<uap:FileType>.icns</uap:FileType>
+					</uap:SupportedFileTypes>
+				</uap:FileTypeAssociation>
+			</uap:Extension>
+		</Extensions>
+	</Application>
   </Applications>
 
   <Capabilities>

@@ -29,6 +29,8 @@ namespace IconViewer
     /// </summary>
     public partial class App : Application
     {
+        public static IReadOnlyList<Windows.Storage.IStorageItem> Files { get; protected set; }
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -37,6 +39,7 @@ namespace IconViewer
         {
             this.InitializeComponent();
         }
+        
 
         /// <summary>
         /// Invoked when the application is launched.
@@ -44,8 +47,20 @@ namespace IconViewer
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
+            IActivatedEventArgs eventArgs = AppInstance.GetActivatedEventArgs();
+
+            if (eventArgs != null && eventArgs.Kind == ActivationKind.File)
+            {
+                HandleFileLaunch(eventArgs as FileActivatedEventArgs);
+            }
+
             m_window = new MainWindow();
             m_window.Activate();
+        }
+
+        protected void HandleFileLaunch(FileActivatedEventArgs args)
+        {
+            Files = args.Files;
         }
 
         private Window m_window;

@@ -19,6 +19,12 @@ using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI;
 using WinRT;
+using WinRT.Interop;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
+using Windows.UI.ViewManagement;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -34,15 +40,43 @@ namespace IconViewer
         MicaController m_backdropController;
         SystemBackdropConfiguration m_configurationSource;
 
+        private AppWindow m_AppWindow;
+
         public MainWindow()
         {
             this.InitializeComponent();
-
-            ExtendsContentIntoTitleBar = true;
-            SetTitleBar(AppTitleBar);
-
             TrySetSystemBackdrop();
-            //AppTitleBar.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+
+            m_AppWindow = GetAppWindowForCurrentWindow();
+            // Check to see if customization is supported.
+            // Currently only supported on Windows 11.
+            if (AppWindowTitleBar.IsCustomizationSupported())
+            {
+                var titleBar = m_AppWindow.TitleBar;
+                // Hide default title bar.
+                titleBar.ExtendsContentIntoTitleBar = true;
+                titleBar.ButtonBackgroundColor = Colors.Transparent;
+            }
+            else
+            {
+                // Title bar customization using these APIs is currently
+                // supported only on Windows 11. In other cases, hide
+                // the custom title bar element.
+                AppTitleBar.Visibility = Visibility.Collapsed;
+            }
+
+            m_AppWindow.Resize(new Windows.Graphics.SizeInt32(1024, 768));
+
+            if(App.Files?[0].IsOfType(StorageItemTypes.File) == true) {
+                setFileDisplay(App.Files[0].As<IStorageFile>());
+            }
+        }
+
+        private AppWindow GetAppWindowForCurrentWindow()
+        {
+            IntPtr hWnd = WindowNative.GetWindowHandle(this);
+            WindowId wndId = Win32Interop.GetWindowIdFromWindow(hWnd);
+            return AppWindow.GetFromWindowId(wndId);
         }
 
         bool TrySetSystemBackdrop()
@@ -107,6 +141,35 @@ namespace IconViewer
                 case ElementTheme.Dark: m_configurationSource.Theme = Microsoft.UI.Composition.SystemBackdrops.SystemBackdropTheme.Dark; break;
                 case ElementTheme.Light: m_configurationSource.Theme = Microsoft.UI.Composition.SystemBackdrops.SystemBackdropTheme.Light; break;
                 case ElementTheme.Default: m_configurationSource.Theme = Microsoft.UI.Composition.SystemBackdrops.SystemBackdropTheme.Default; break;
+            }
+        }
+
+        private async void ContentFrame_DragOver(object sender, DragEventArgs e)
+        {
+            e.AcceptedOperation = DataPackageOperation.Copy;
+            e.DragUIOverride.Caption = "Open";
+        }
+
+        private async void ContentFrame_Drop(object sender, DragEventArgs e)
+        {
+            if(e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                var items = await e.DataView.GetStorageItemsAsync();
+                if(items.Count > 0)
+                {
+                    var file = items[0] as StorageFile;
+                    if(file.Name.EndsWith(".ico") || file.Name.EndsWith(".icns"))
+                        setFileDisplay(file);
+                }
+            }
+
+        }
+
+        private void setFileDisplay(IStorageFile file)
+        {
+            if(file.FileType == ".ico")
+            {
+                FileName.Text = file.Path;
             }
         }
     }
